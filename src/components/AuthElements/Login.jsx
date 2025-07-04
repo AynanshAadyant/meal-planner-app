@@ -1,5 +1,6 @@
+import axios from "axios";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function LoginCard() {
 
@@ -9,16 +10,33 @@ export default function LoginCard() {
     });
 
     const [showPassword, setShowPassword ] = useState(false);
+    const [ message, setMessage ] = useState( "" );
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData( {
-            ...formData, [ e.target.name]: e.target.value
+            ...formData, [ e.target.name ]: e.target.value
         }
         )
     }
 
     const handleSubmit = () => {
-        console.log( formData );
+      setMessage( "Logging in... " );
+      axios.post( "http://localhost:5500/api/v1/user/login", formData, { withCredentials : true} )
+      .then( (res) => {
+        if( res.data.success ) {
+          setMessage( "Login successful" );
+          setTimeout( navigate( "/user" ), 1200 );
+        }
+        else{
+          setMessage( "Something went wrong" );
+          console.error( "Unhandled Error encountered while logging in", res.data );
+        }
+      })
+      .catch( (err) => {
+        console.error( "ERROR while logging in", err );
+        setMessage( err.response.data.message );
+      })
     }
 
   return (
@@ -26,11 +44,13 @@ export default function LoginCard() {
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Welcome Back</h2>
       
       <form className="space-y-5">
+        <p> { message}</p>
         <div>
           <input
             type="email"
             className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
             placeholder="Email"
+            name="email"
             onChange={ (e) => {
                 e.preventDefault();
                 handleChange( e );
@@ -43,6 +63,7 @@ export default function LoginCard() {
                 type={ showPassword ? "text" : "password"}
                 className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                 placeholder="Password"
+                name="password"
                 onChange={ (e) => {
                     e.preventDefault();
                     handleChange( e );
@@ -64,7 +85,7 @@ export default function LoginCard() {
                 handleSubmit();
             }}
         >
-          Sign In
+          Login
         </button>
       </form>
 

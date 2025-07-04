@@ -1,7 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function UserNavBar() {
+export default function UserNavBar( {user} ) {
     const navigate = useNavigate();
 
     const handleLogOut = () => {
@@ -19,7 +19,7 @@ export default function UserNavBar() {
 
             {/* Right: Profile + Logout */}
             <div className="flex items-center gap-4 pr-4">
-                <h1 className="text-xl font-bold px-4 py-2 bg-blue-300 rounded-full">A</h1>
+                <Link to="/profile" className="text-xl font-bold px-4 py-2 bg-blue-300 rounded-full"> { user.name[0] }</Link>
                 <button
                     className="text-black bg-green-300 px-4 py-2 rounded-lg font-bold cursor-pointer hover:scale-105 hover:shadow-xl focus:bg-green-300"
                     onClick={(e) => {

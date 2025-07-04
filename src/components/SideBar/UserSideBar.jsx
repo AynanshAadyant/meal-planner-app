@@ -8,7 +8,7 @@ export default function UserSideBar() {
                 <div className="home px-5 py-1 rounded-full hover:bg-gray-300 cursor-pointer">
                     <Link 
                     to="/user"
-                    className="text-gray-700 text-lg font-semibold "> Home </Link>
+                    className="text-gray-700 text-lg font-semibold "> Dashboard </Link>
                 </div>
                 <div className="log-meals px-5 py-1 rounded-full hover:bg-gray-300 cursor-pointer">
                     <Link 

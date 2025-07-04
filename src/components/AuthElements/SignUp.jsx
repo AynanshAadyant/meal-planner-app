@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function SignUpCard() {
   const [formData, setFormData] = useState({
@@ -16,6 +17,9 @@ export default function SignUpCard() {
     goals: "Maintain"
   });
 
+  const [ message, setMessage ] = useState( "" );
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -23,13 +27,30 @@ export default function SignUpCard() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
+    setMessage( "Signing Up..." );
+    axios.post( "http://localhost:5500/api/v1/user/register", formData, )
+    .then( (res) => {
+      if( res.data.success ) {
+        setMessage( "Sign Up successful" );
+        setTimeout( navigate( "/auth/login" ), 2000 );
+      }
+      else {
+        setMessage( "Something went wrong" );
+        console.error( "Unhandled error encountered while signing up ", res.data );
+      }
+    })
+    .catch( (err) => {
+        console.error( "ERROR while signing up ", err.response.data );
+        setMessage( err.response.data.message );
+        throw err;
+      })
   };
 
   return (
     <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-2xl border">
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Create Your NutriPlan Account</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
+        <p className="text-center text-xl"> { message } </p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <input type="text" name="name" onChange={handleChange} className="w-full p-2 border rounded-md" placeholder="Name" required />

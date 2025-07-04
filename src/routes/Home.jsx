@@ -7,6 +7,8 @@ import UserDashboard from "../pages/UserDashboard.jsx";
 import UserMain from "../components/MainContent/UserMain.jsx";
 import MealLog from "../components/MainContent/MealLog.jsx";
 import RecalculatePlan from "../components/MainContent/RecalculatePlan.jsx";
+import GroceryList from "../components/MainContent/GroceryList.jsx";
+import CalendarPlan from "../components/MainContent/CalendarPlan.jsx";
 
 export default function Home() {
     return( 
@@ -20,7 +22,9 @@ export default function Home() {
                 <Route path="/user" element={<UserDashboard />}>
                     <Route index element={<UserMain />}></Route>
                     <Route path="/user/log" element={<MealLog />}></Route>
-                    <Route path="/user/recalculate_plan" element={ <RecalculatePlan />}></Route>
+                    <Route path="/user/plan" element={ <RecalculatePlan />}></Route>
+                    <Route path="/user/grocery" element={<GroceryList />}></Route>
+                    <Route path="/user/calendar" element={<CalendarPlan />}></Route>
                 </Route>
             </Routes>
         </Router>
