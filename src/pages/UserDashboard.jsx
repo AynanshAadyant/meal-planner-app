@@ -11,7 +11,6 @@ export default function UserDashboard() {
   const getUser = () => {
     axios.get( "http://localhost:5500/api/v1/user/current", { withCredentials: true })
     .then( (res) => {
-      console.log( res.data.body );
       setUser( res.data.body );
       setLoggedIn( true );
     })
@@ -22,7 +21,6 @@ export default function UserDashboard() {
 
   useEffect( () => {
     getUser();
-    console.log( user );
   }, [ ]);
 
   if (!isLoggedIn) {

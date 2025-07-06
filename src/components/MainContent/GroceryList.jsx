@@ -1,48 +1,32 @@
-import React from "react";
+import axios from "axios";
+import React, { useState, useEffect } from "react";
 
 export default function GroceryList() {
-    const grocery = [
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
+    
+
+    const [ grocery, setGrocery ] = useState( [] );
+    const date = new Date();
+
+    const getGrocery = () => {
+        axios.post( "http://localhost:5500/api/v1/ration/get", {
+             year : date.getFullYear(),
+            month: date.getMonth() + 1
         },
         {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-        {
-            name: "Apple",
-            quantity: 1,
-            unit: "lb"
-        },
-    ];
+            withCredentials: true
+        })
+        .then( (res) => {
+            setGrocery( res.data.body );
+        })
+        .catch( (err) => {
+            console.error( "ERROR while fetching grocer ", err );
+            alert( "Something went wrong while fetching grocery items" );
+        })
+    }
+
+    useEffect( () => {
+        getGrocery();
+    }, [])
 
     return( 
         <>
@@ -59,7 +43,7 @@ export default function GroceryList() {
                     ?
                     grocery.map( ( grocery, index ) => 
                         <div className="grocery_item flex flex-col w-full px-10 py-1 rounded-xl cursor-pointer hover:shadow-xl" key={index}>
-                            <h1 className="text-lg font-bold"> { grocery.name } </h1>
+                            <h1 className="text-lg font-bold"> { grocery.ingredient } </h1>
                             <h1 className="text-green-900"> { grocery.quantity} { grocery.unit } </h1>
                         </div>
                     )

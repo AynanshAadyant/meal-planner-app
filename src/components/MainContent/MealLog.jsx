@@ -1,168 +1,128 @@
 import React, { useState, useEffect } from "react";
 import LogTiles from "../Tiles/LogTiles";
-
-// Simulated backend fetch
-const mockFetchMeals = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          heading: "Grilled Chicken Breast",
-          nutrition: {
-            calories: 165,
-            carbohydrates: 0,
-            protien: 31,
-            fats: 3.6,
-          },
-        },
-        {
-          heading: "Paneer Tikka",
-          nutrition: {
-            calories: 275,
-            carbohydrates: 5,
-            protien: 20,
-            fats: 18,
-          },
-        },
-        {
-          heading: "Boiled Eggs",
-          nutrition: {
-            calories: 155,
-            carbohydrates: 1.1,
-            protien: 13,
-            fats: 11,
-          },
-        },
-        {
-          heading: "Banana",
-          nutrition: {
-            calories: 105,
-            carbohydrates: 27,
-            protien: 1.3,
-            fats: 0.3,
-          },
-        },
-        {
-          heading: "Masala Oats",
-          nutrition: {
-            calories: 212,
-            carbohydrates: 38,
-            protien: 6,
-            fats: 4,
-          },
-        },
-        {
-          heading: "Green Salad",
-          nutrition: {
-            calories: 90,
-            carbohydrates: 12,
-            protien: 2,
-            fats: 4,
-          },
-        },
-        {
-          heading: "Protein Shake",
-          nutrition: {
-            calories: 200,
-            carbohydrates: 5,
-            protien: 30,
-            fats: 3,
-          },
-        },
-      ]);
-    }, 500); // Simulate network delay
-  });
-};
+import axios from "axios";
 
 export default function MealLog() {
   const [mealType, setMealType] = useState("breakfast");
   const [meals, setMeals] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchLog, setSearchLog] = useState([]);
+  const [selectedMeal, setSelectedMeal] = useState(null);
   const [todayLog, setTodayLog] = useState([]);
-  const [nutritionalLog, setNutritionalLog] = useState([]);
+  const [nutritionalLog, setNutritionalLog] = useState([
+    { nutrient: "Calories", value: 0, unit: "kcal" },
+    { nutrient: "Carbohydrates", value: 0, unit: "g" },
+    { nutrient: "Protien", value: 0, unit: "g" },
+    { nutrient: "Fats", value: 0, unit: "g" },
+  ]);
 
-  // Date
+  // Current Date
   const currentDate = new Date();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
   const date = currentDate.getDate();
 
-  // Fetch meals on mount
+  // Fetch all meals from backend
   useEffect(() => {
-    mockFetchMeals().then((data) => {
-      setMeals(data);
-    });
+    axios
+      .get("http://localhost:5500/api/v1/meal/get", { withCredentials: true })
+      .then((res) => setMeals(res.data.body))
+      .catch((err) => console.error("Error fetching meals:", err));
   }, []);
 
-  // Auto-search
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setSearchLog([]);
-      return;
+  // Fetch today's meal log
+  const fetchTodaysLog = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5500/api/v1/mealPlan/get/${year}/${month}/${date}`,
+        { withCredentials: true }
+      );
+      setTodayLog(res.data.body.meals);
+    } catch (err) {
+      console.error("Error fetching today's log:", err);
     }
+  };
 
+  useEffect(() => {
+    fetchTodaysLog();
+  }, []);
+
+  // Search filter
+  useEffect(() => {
+    if (!searchTerm.trim()) return setSearchLog([]);
     const filtered = meals.filter((meal) =>
       meal.heading.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
     setSearchLog(filtered);
   }, [searchTerm, meals]);
 
-  // Select meal
+  // Handle meal select
   const handleSelectMeal = (meal) => {
-    setTodayLog((prev) => [...prev, meal]);
-
-    // Update nutritional log
-    const newNutrition = { ...meal.nutrition };
-    setNutritionalLog((prev) => {
-      const updated = { calories: 0, carbohydrates: 0, protien: 0, fats: 0 };
-
-      prev.forEach((nutrient) => {
-        updated[nutrient.nutrient.toLowerCase()] = nutrient.value;
-      });
-
-      updated.calories += newNutrition.calories;
-      updated.carbohydrates += newNutrition.carbohydrates;
-      updated.protien += newNutrition.protien;
-      updated.fats += newNutrition.fats;
-
-      return [
-        { nutrient: "Calories", value: updated.calories, unit: "kcal" },
-        { nutrient: "Carbohydrates", value: updated.carbohydrates, unit: "g" },
-        { nutrient: "Protien", value: updated.protien, unit: "g" },
-        { nutrient: "Fats", value: updated.fats, unit: "g" },
-      ];
-    });
-
-    // Clear search
+    setSelectedMeal(meal);
+    updateNutrition(meal.nutrition);
     setSearchTerm("");
     setSearchLog([]);
   };
 
-  const handleSaveMeal = () => {
-    alert(
-      `Saved ${todayLog.length} meals for ${mealType} on ${year}-${month}-${date}`
-    );
-    // Future: Send to backend via axios.post
+  // Nutrition calculation
+  const updateNutrition = (mealNutrition) => {
+    const updated = {
+      calories: nutritionalLog[0]?.value || 0,
+      carbohydrates: nutritionalLog[1]?.value || 0,
+      protien: nutritionalLog[2]?.value || 0,
+      fats: nutritionalLog[3]?.value || 0,
+    };
+
+    updated.calories += mealNutrition.calories;
+    updated.carbohydrates += mealNutrition.carbohydrates;
+    updated.protien += mealNutrition.protien;
+    updated.fats += mealNutrition.fats;
+
+    setNutritionalLog([
+      { nutrient: "Calories", value: updated.calories, unit: "kcal" },
+      { nutrient: "Carbohydrates", value: updated.carbohydrates, unit: "g" },
+      { nutrient: "Protien", value: updated.protien, unit: "g" },
+      { nutrient: "Fats", value: updated.fats, unit: "g" },
+    ]);
+  };
+
+  // Save meal to backend
+  const handleSaveMeal = async () => {
+    if (!selectedMeal) return alert("Please select a meal first.");
+    const payload = {
+      year,
+      month,
+      date,
+      mealType,
+      meal: selectedMeal._id,
+    };
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5500/api/v1/mealPlan/create",
+        payload,
+        { withCredentials: true }
+      );
+      alert(res.data.message || "Meal saved!");
+      fetchTodaysLog(); // Refresh log
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Failed to save meal.");
+    }
   };
 
   return (
-    <>
-      <div className="heading mb-6">
-        <h1 className="text-5xl font-bold">Log a Meal</h1>
-      </div>
+    <div className=" space-y-6">
+      <h1 className="text-5xl font-bold">Log a Meal</h1>
 
       {/* Meal Type Selection */}
-      <div className="meal_type px-20 py-2 bg-green-700/30 flex flex-row gap-4 rounded-full justify-center items-center mb-6">
+      <div className="flex gap-4 justify-center bg-green-100 py-2 rounded-full">
         {["breakfast", "lunch", "dinner", "snacks"].map((type) => (
           <button
             key={type}
             onClick={() => setMealType(type)}
-            className={`rounded-full px-8 py-1 w-1/4 text-center ${
-              mealType === type
-                ? "bg-white text-green-900 font-bold"
-                : "text-green-900"
+            className={`rounded-full px-8 py-1 text-center transition ${
+              mealType === type ? "bg-white text-green-900 font-bold" : "text-green-900"
             }`}
           >
             {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -170,60 +130,67 @@ export default function MealLog() {
         ))}
       </div>
 
-      {/* Search Bar */}
-      <div className="search mb-5">
+      {/* Search Section */}
+      <div>
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search for food"
-          className="border border-gray-400 rounded-lg px-5 py-2 text-gray-900 w-full"
+          className="border border-gray-400 rounded-lg px-5 py-2 w-full"
         />
-        <div className="search_results mt-2">
-          {searchLog.map((meal, index) => (
-            <div key={index} className="cursor-pointer" onClick={() => handleSelectMeal(meal)}>
-              <LogTiles meal={meal} />
+        <div className="mt-2 space-y-2">
+          {searchLog.length > 0 ? (
+            searchLog.map((meal, index) => (
+              <div key={index} className="cursor-pointer" onClick={() => handleSelectMeal(meal)}>
+                <LogTiles meal={meal} />
+              </div>
+            ))
+          ) : searchTerm.trim() !== "" ? (
+            <div className="text-center text-gray-600 mt-2">No meal found</div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Today's Log with fixed height */}
+      <div className="flex flex-col gap-4 mt-6 min-h-[200px]">
+        <h2 className="text-xl font-bold">Today's Log</h2>
+        {todayLog.length > 0 ? (
+          todayLog.map((entry, idx) => (
+            <div key={idx} className="bg-gray-100 p-3 rounded-md">
+              <p className="font-semibold capitalize">{entry.mealType}</p>
+              <p>{entry.meal?.heading || "Meal Deleted"}</p>
             </div>
-          ))}
-        </div>
+          ))
+        ) : (
+          <p className="text-gray-500 italic">No meals logged yet for today.</p>
+        )}
       </div>
 
-      {/* Today's Log */}
-      <div className="today_log flex flex-col gap-4 mt-6">
-        <h1 className="text-xl font-bold">Today's Log ({mealType})</h1>
-        <div className="meals flex flex-col gap-2">
-          {todayLog.map((meal, index) => (
-            <LogTiles meal={meal} key={index} />
-          ))}
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="summary flex flex-col gap-4 mt-6">
-        <h1 className="text-xl font-bold">Summary</h1>
-        <div className="nutrition_map flex flex-col gap-2">
-          {nutritionalLog.map((nutrition, index) => (
-            <div className="log flex flex-row items-center" key={index}>
-              <h1 className="w-full text-green-700 text-lg">
-                {nutrition.nutrient}
-              </h1>
-              <h1 className="w-1/6 text-right">
-                {nutrition.value} {nutrition.unit}
-              </h1>
+      {/* Nutrition Summary */}
+      <div>
+        <h2 className="text-xl font-bold mb-2">Summary</h2>
+        <div className="space-y-1">
+          {nutritionalLog.map((n, i) => (
+            <div key={i} className="flex justify-between">
+              <span className="text-green-700 font-medium">{n.nutrient}</span>
+              <span>
+                {n.value} {n.unit}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Save Button */}
-      <div className="save_meal w-1/2 mt-6">
+      <div className="mt-4 w-1/2 mx-auto">
         <button
-          className="bg-green-600/40 w-full rounded-full py-2 font-bold"
           onClick={handleSaveMeal}
+          className="bg-green-600 text-white w-full py-2 rounded-full font-semibold hover:bg-green-700 transition"
         >
           Save Meal
         </button>
       </div>
-    </>
+    </div>
   );
 }

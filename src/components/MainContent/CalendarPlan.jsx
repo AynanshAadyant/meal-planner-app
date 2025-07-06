@@ -1,69 +1,123 @@
-export default function CalendarPlan() {
+import { useOutletContext } from "react-router-dom";
+import NutritionCard from "../Cards/NutrtionCard";
+import axios from "axios";
+import { useState, useEffect } from "react";
 
-    const sample = {
-        month : "July",
-        day: 15,
-        meals : [ 
-            {
-                type: "Breakfast",
-                meal : "Oatmeal",
-                calories: 250,
-                unit: "kcal"
-            },
-            {
-                type: "Lunch",
-                meal : "Chicken salad",
-                calories: 400,
-                unit: "kcal"
-            },
-            {
-                type: "Snack",
-                meal : "Nuts",
-                calories: 150,
-                unit: "kcal"
-            },
-            {
-                type: "Dinner",
-                meal : "Salmon with Vegetables",
-                calories: 550,
-                unit: "kcal"
-            },
-        ]
+export default function CalendarPlan() {
+  const { user } = useOutletContext();
+
+  const [mealSuggestions, setMealSuggestions] = useState([]);
+  const [requiredNutrition, setRequiredNutrition] = useState(user?.nutrition || {});
+  const [completedNutrition, setCompletedNutrition] = useState(null);
+  const [nutritionLeft, setNutritionLeft] = useState([
+    { heading: "Calories", description: "0 kcal" },
+    { heading: "Protein", description: "0 g" },
+    { heading: "Carbohydrates", description: "0 g" }
+  ]);
+
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August','September', 'October', 'November', 'December'];
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  const getMealPlan = () => {
+    axios
+      .get(`http://localhost:5500/api/v1/mealPlan/get/${year}/${month+1}/${day}`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setCompletedNutrition(res.data.body.nutrition);
+      })
+      .catch((err) => {
+        console.error("ERROR while fetching mealPlan", err);
+        setCompletedNutrition(null); // fallback to zero
+      });
+  };
+
+  const getMealSuggestions = (nutrition) => {
+    axios
+      .post("http://localhost:5500/api/v1/meal/suggestions", { nutrition }, { withCredentials: true })
+      .then((res) => {
+        setMealSuggestions(res.data.body);
+      })
+      .catch((err) => {
+        console.error("ERROR while fetching meal suggestions", err);
+      });
+  };
+
+  useEffect(() => {
+    getMealPlan();
+  }, []);
+
+  useEffect(() => {
+    if (user?.nutrition && completedNutrition) {
+      const deficit = {
+        calories: Math.max(user.nutrition.calories - (completedNutrition.calories || 0), 0),
+        protein: Math.max(user.nutrition.protein - (completedNutrition.protein || 0), 0),
+        carbohydrates: Math.max(user.nutrition.carbohydrates - (completedNutrition.carbohydrates || 0), 0),
+      };
+
+      setNutritionLeft([
+        { heading: "Calories", description: `${deficit.calories} kcal` },
+        { heading: "Protein", description: `${deficit.protein} g` },
+        { heading: "Carbohydrates", description: `${deficit.carbohydrates} g` }
+      ]);
+
+      getMealSuggestions(deficit);
+    } else if (!completedNutrition && user?.nutrition) {
+      // fallback to user’s full target
+      setNutritionLeft([
+        { heading: "Calories", description: `${user.nutrition.calories} kcal` },
+        { heading: "Protein", description: `${user.nutrition.protein} g` },
+        { heading: "Carbohydrates", description: `${user.nutrition.carbohydrates} g` }
+      ]);
+
+      getMealSuggestions(user.nutrition);
     }
-    return(
-        <>
-            <div className="heading">
-                <h1 className="text-5xl font-extrabold"> Meal Calendar </h1>
-            </div>
-            <div className="content flex flex-col gap-5">
-                <div className="date">
-                    <h1 className="text-3xl font-bold"> { sample.month }, {sample.day} </h1>
+  }, [user, completedNutrition]);
+
+  return (
+    <>
+      <div className="heading">
+        <h1 className="text-5xl font-extrabold">Meal Suggestions:</h1>
+      </div>
+      <div className="content flex flex-col gap-5">
+        <div className="nutrition flex flex-col gap-4">
+          <h1 className="text-xl font-bold">Nutrition Left for the Day:</h1>
+          <div className="nutrition-stats flex flex-row gap-2 w-full">
+            {nutritionLeft.map((nutrition, index) => (
+              <NutritionCard nutrition={nutrition} frequency={5} key={index} />
+            ))}
+          </div>
+        </div>
+
+        <div className="meals flex flex-col gap-2">
+          {mealSuggestions.length > 0 ? (
+            mealSuggestions.map((meal, index) => (
+              <div
+                className="meal flex flex-row items-center w-full p-2 border border-gray-300 rounded-lg shadow-sm"
+                key={index}
+              >
+                <div className="info flex flex-col w-5/6">
+                  <h1 className="text-xl font-bold">
+                    {meal.mealType} : {meal.mealName || meal.name}
+                  </h1>
+                  <h2 className="text-green-800">
+                    {meal.nutrition?.calories || 0} kcal, {meal.nutrition?.protein || 0} g Protein
+                  </h2>
                 </div>
-                <div className="meals flex flex-col gap-2">
-                    {
-                        ( sample.meals.length > 0 ) 
-                        ?
-                        sample.meals.map( ( meal, index ) => {
-                            return(
-                                <div className="meal flex flex-row items-center w-full p-2" key={index}>
-                                    <div className="info flex flex-col w-5/6">
-                                        <h1 className="text-xl font-bold"> { meal.type} : { meal.meal } </h1>
-                                        <h2 className="text-green-800 "> { meal.calories } { meal.unit} </h2>
-                                    </div>
-                                    <div className="buttons flex flex-row gap-4 w-1/6">
-                                        <button className="bg-green-400 font-bold px-4 py-1 rounded-lg"> Log </button>
-                                        <button className="bg-yellow-400 font-bold px-4 py-1 rounded-lg"> Reshuffle </button>
-                                    </div>
-                                </div>
-                            )
-                        })
-                        :
-                        <div className="no-meals">
-                            <h1> No meals added yet </h1>
-                        </div>
-                    }
+                <div className="buttons flex flex-row gap-4 w-1/6">
+                  <button className="bg-green-400 font-bold px-4 py-1 rounded-lg">Log</button>
+                  <button className="bg-yellow-400 font-bold px-4 py-1 rounded-lg">Reshuffle</button>
                 </div>
-            </div>
-        </>
-    )
+              </div>
+            ))
+          ) : (
+            <div className="no-meals text-gray-500 font-semibold">No meals suggested yet.</div>
+          )}
+        </div>
+      </div>
+    </>
+  );
 }
