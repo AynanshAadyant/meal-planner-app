@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import backend_url from "../../constants/constant";
 
 export default function LoginCard() {
 
@@ -22,7 +23,7 @@ export default function LoginCard() {
 
     const handleSubmit = () => {
       setMessage( "Logging in... " );
-      axios.post( "http://localhost:5500/api/v1/user/login", formData, { withCredentials : true} )
+      axios.post( `${backend_url}/api/v1/user/login`, formData, { withCredentials : true} )
       .then( (res) => {
         if( res.data.success ) {
           setMessage( "Login successful" );

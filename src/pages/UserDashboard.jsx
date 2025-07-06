@@ -3,13 +3,14 @@ import UserNavBar from "../components/NavBar/UserNavBar";
 import UserSideBar from "../components/SideBar/UserSideBar";
 import { Link, Outlet } from "react-router-dom";
 import axios from "axios";
+import backend_url from "../constants/constant";
 
 export default function UserDashboard() {
   const [user, setUser] = useState( );
   const [isLoggedIn, setLoggedIn] = useState(false);
 
   const getUser = () => {
-    axios.get( "http://localhost:5500/api/v1/user/current", { withCredentials: true })
+    axios.get( `${backend_url}/api/v1/user/current`, { withCredentials: true })
     .then( (res) => {
       setUser( res.data.body );
       setLoggedIn( true );

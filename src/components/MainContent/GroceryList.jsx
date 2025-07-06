@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
+import backend_url from "../../constants/constant";
 
 export default function GroceryList() {
     
@@ -8,7 +9,7 @@ export default function GroceryList() {
     const date = new Date();
 
     const getGrocery = () => {
-        axios.post( "http://localhost:5500/api/v1/ration/get", {
+        axios.post( `${backend_url}/api/v1/ration/get`, {
              year : date.getFullYear(),
             month: date.getMonth() + 1
         },

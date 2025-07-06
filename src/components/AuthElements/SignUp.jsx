@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import backend_url from "../../constants/constant";
 
 export default function SignUpCard() {
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ export default function SignUpCard() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setMessage( "Signing Up..." );
-    axios.post( "http://localhost:5500/api/v1/user/register", formData, )
+    axios.post( `${backend_url}/api/v1/user/register`, formData, )
     .then( (res) => {
       if( res.data.success ) {
         setMessage( "Sign Up successful" );

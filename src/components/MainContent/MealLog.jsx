@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import LogTiles from "../Tiles/LogTiles";
 import axios from "axios";
+import backend_url from "../../constants/constant";
 
 export default function MealLog() {
   const [mealType, setMealType] = useState("breakfast");
@@ -99,7 +100,7 @@ export default function MealLog() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5500/api/v1/mealPlan/create",
+        `${backend_url}/api/v1/mealPlan/create`,
         payload,
         { withCredentials: true }
       );

@@ -2,6 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import NutritionCard from "../Cards/NutrtionCard";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import  backend_url from "../../constants/constant.js"
 
 export default function CalendarPlan() {
   const { user } = useOutletContext();
@@ -23,7 +24,7 @@ export default function CalendarPlan() {
 
   const getMealPlan = () => {
     axios
-      .get(`http://localhost:5500/api/v1/mealPlan/get/${year}/${month+1}/${day}`, {
+      .get(`${backend_url}/api/v1/mealPlan/get/${year}/${month+1}/${day}`, {
         withCredentials: true,
       })
       .then((res) => {

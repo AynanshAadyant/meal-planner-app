@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
+import backend_url from "../../constants/constant";
 
 export default function RecalculatePlan() {
 
     const {user, getUser} = useOutletContext();
-
     const [adjustData, setAdjustData] = useState({
         activityLevel: user.activityLevel || '',
         dietaryGoal: user.goals || ''
     });
-
     const [ loading, setLoading ] = useState( false );
-    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setAdjustData(prev => ({
@@ -25,7 +23,7 @@ export default function RecalculatePlan() {
     try {
         setLoading( true );
         axios.post(
-        "http://localhost:5500/api/v1/user/updateGoals",
+        `${backend_url}/api/v1/user/updateGoals`,
         adjustData,
         { withCredentials: true }
         )
