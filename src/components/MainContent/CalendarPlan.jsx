@@ -1,80 +1,97 @@
 import { useOutletContext } from "react-router-dom";
 import NutritionCard from "../Cards/NutrtionCard";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import backend_url from "../../constants/constant.js";
 
 export default function CalendarPlan() {
   const { user } = useOutletContext();
 
   const [mealSuggestions, setMealSuggestions] = useState([]);
-  const [requiredNutrition, setRequiredNutrition] = useState(user?.nutrition || {});
   const [completedNutrition, setCompletedNutrition] = useState(null);
-  const [nutritionLeft, setNutritionLeft] = useState([
-    { heading: "Calories", description: 0, unit: "kcal" },
-    { heading: "Protein", description: 0, unit: "g" },
-    { heading: "Carbohydrates", description: 0, unit: "g" }
-  ]);
+  const [loading, setLoading] = useState(true);
 
   const date = new Date();
   const year = date.getFullYear();
   const month = date.getMonth();
   const day = date.getDate();
 
-  const getMealPlan = () => {
-    axios
-      .get(`${backend_url}/api/v1/mealPlan/get/${year}/${month + 1}/${day}`, {
-        withCredentials: true,
-      })
-      .then((res) => {
-        setCompletedNutrition(res.data.body.nutrition);
-      })
-      .catch((err) => {
-        console.error("ERROR while fetching mealPlan", err);
-        setCompletedNutrition(null); // fallback to zero
-      });
-  };
-
-  const getMealSuggestions = (nutrition) => {
-    axios
-      .post(`${backend_url}/api/v1/meal/suggestions`, { nutrition }, { withCredentials: true })
-      .then((res) => {
-        setMealSuggestions(res.data.body);
-      })
-      .catch((err) => {
-        console.error("ERROR while fetching meal suggestions", err);
-      });
-  };
-
+  // 1. Fetch today's completed meal nutrition
   useEffect(() => {
+    const getMealPlan = async () => {
+      try {
+        const res = await axios.get(`${backend_url}/api/v1/mealPlan/get/${year}/${month + 1}/${day}`, {
+          withCredentials: true,
+        });
+        setCompletedNutrition(res.data.body.nutrition);
+      } catch (err) {
+        console.error("ERROR while fetching mealPlan", err);
+        setCompletedNutrition(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     getMealPlan();
   }, []);
 
+  // 2. Compute nutrition left for the day
+  const nutritionLeft = useMemo(() => {
+    if (!user?.nutrition) return [];
+
+    const deficit = completedNutrition
+      ? {
+          calories: Math.max(user.nutrition.calories - (completedNutrition.calories || 0), 0),
+          protein: Math.max(user.nutrition.protein - (completedNutrition.protein || 0), 0),
+          carbohydrates: Math.max(user.nutrition.carbohydrates - (completedNutrition.carbohydrates || 0), 0),
+        }
+      : {
+          calories: user.nutrition.calories,
+          protein: user.nutrition.protein,
+          carbohydrates: user.nutrition.carbohydrates,
+        };
+
+    return [
+      { heading: "Calories", description: deficit.calories, unit: "kcal" },
+      { heading: "Protein", description: deficit.protein, unit: "g" },
+      { heading: "Carbohydrates", description: deficit.carbohydrates, unit: "g" },
+    ];
+  }, [user, completedNutrition]);
+
+  // 3. Fetch suggestions based on nutritionLeft
   useEffect(() => {
-    if (user?.nutrition && completedNutrition) {
-      const deficit = {
-        calories: Math.max(user.nutrition.calories - (completedNutrition.calories || 0), 0),
-        protein: Math.max(user.nutrition.protein - (completedNutrition.protein || 0), 0),
-        carbohydrates: Math.max(user.nutrition.carbohydrates - (completedNutrition.carbohydrates || 0), 0),
+    const fetchSuggestions = async () => {
+      if (nutritionLeft.length === 0) return;
+
+      const nutrition = {
+        calories: nutritionLeft[0].description,
+        protein: nutritionLeft[1].description,
+        carbohydrates: nutritionLeft[2].description,
       };
 
-      setNutritionLeft([
-        { heading: "Calories", description: deficit.calories, unit: "kcal" },
-        { heading: "Protein", description: deficit.protein, unit: "g" },
-        { heading: "Carbohydrates", description: deficit.carbohydrates, unit: "g" }
-      ]);
+      try {
+        const res = await axios.post(
+          `${backend_url}/api/v1/meal/suggestions`,
+          { nutrition },
+          { withCredentials: true }
+        );
+        setMealSuggestions(res.data.body);
+      } catch (err) {
+        console.error("ERROR while fetching meal suggestions", err);
+      }
+    };
 
-      getMealSuggestions(deficit);
-    } else if (!completedNutrition && user?.nutrition) {
-      setNutritionLeft([
-        { heading: "Calories", description: user.nutrition.calories, unit: "kcal" },
-        { heading: "Protein", description: user.nutrition.protein, unit: "g" },
-        { heading: "Carbohydrates", description: user.nutrition.carbohydrates, unit: "g" }
-      ]);
+    fetchSuggestions();
+  }, [nutritionLeft]);
 
-      getMealSuggestions(user.nutrition);
-    }
-  }, [user, completedNutrition]);
+  // 4. Handle loading or missing user
+  if (loading || !user?.nutrition) {
+    return (
+      <div className="flex justify-center items-center h-full text-gray-500 font-semibold">
+        Loading your meal plan...
+      </div>
+    );
+  }
 
   return (
     <>

@@ -22,7 +22,7 @@ export default function UserDashboard() {
 
   useEffect( () => {
     getUser();
-  }, [ ]);
+  }, []);
 
   if (!isLoggedIn) {
     return (
