@@ -39,7 +39,7 @@ export default function HomeContent() {
     ]
     return( 
         <>
-            <div className="hero flex flex-row gap-8">
+            <div className="hero flex flex-row gap-20">
                 <img src="https://github.com/AynanshAadyant/meal-planner-app/blob/main/public/hero-section.jpg" alt="hero-section" className="rounded-xl h-auto w-1/2" />
                 <div className="hero-section-text flex flex-col gap-5">
                     <h1 className="text-6xl font-extrabold"> Your Fitness, Your Food, Your Future </h1>
