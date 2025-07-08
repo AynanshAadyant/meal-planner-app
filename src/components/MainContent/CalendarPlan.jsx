@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 import NutritionCard from "../Cards/NutrtionCard";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import  backend_url from "../../constants/constant.js"
+import backend_url from "../../constants/constant.js";
 
 export default function CalendarPlan() {
   const { user } = useOutletContext();
@@ -11,12 +11,11 @@ export default function CalendarPlan() {
   const [requiredNutrition, setRequiredNutrition] = useState(user?.nutrition || {});
   const [completedNutrition, setCompletedNutrition] = useState(null);
   const [nutritionLeft, setNutritionLeft] = useState([
-    { heading: "Calories", description: "0 kcal" },
-    { heading: "Protein", description: "0 g" },
-    { heading: "Carbohydrates", description: "0 g" }
+    { heading: "Calories", description: 0, unit: "kcal" },
+    { heading: "Protein", description: 0, unit: "g" },
+    { heading: "Carbohydrates", description: 0, unit: "g" }
   ]);
 
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August','September', 'October', 'November', 'December'];
   const date = new Date();
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -24,7 +23,7 @@ export default function CalendarPlan() {
 
   const getMealPlan = () => {
     axios
-      .get(`${backend_url}/api/v1/mealPlan/get/${year}/${month+1}/${day}`, {
+      .get(`${backend_url}/api/v1/mealPlan/get/${year}/${month + 1}/${day}`, {
         withCredentials: true,
       })
       .then((res) => {
@@ -38,7 +37,7 @@ export default function CalendarPlan() {
 
   const getMealSuggestions = (nutrition) => {
     axios
-      .post("http://localhost:5500/api/v1/meal/suggestions", { nutrition }, { withCredentials: true })
+      .post(`${backend_url}/api/v1/meal/suggestions`, { nutrition }, { withCredentials: true })
       .then((res) => {
         setMealSuggestions(res.data.body);
       })
@@ -60,18 +59,17 @@ export default function CalendarPlan() {
       };
 
       setNutritionLeft([
-        { heading: "Calories", description: `${deficit.calories} kcal` },
-        { heading: "Protein", description: `${deficit.protein} g` },
-        { heading: "Carbohydrates", description: `${deficit.carbohydrates} g` }
+        { heading: "Calories", description: deficit.calories, unit: "kcal" },
+        { heading: "Protein", description: deficit.protein, unit: "g" },
+        { heading: "Carbohydrates", description: deficit.carbohydrates, unit: "g" }
       ]);
 
       getMealSuggestions(deficit);
     } else if (!completedNutrition && user?.nutrition) {
-      // fallback to user’s full target
       setNutritionLeft([
-        { heading: "Calories", description: `${user.nutrition.calories} kcal` },
-        { heading: "Protein", description: `${user.nutrition.protein} g` },
-        { heading: "Carbohydrates", description: `${user.nutrition.carbohydrates} g` }
+        { heading: "Calories", description: user.nutrition.calories, unit: "kcal" },
+        { heading: "Protein", description: user.nutrition.protein, unit: "g" },
+        { heading: "Carbohydrates", description: user.nutrition.carbohydrates, unit: "g" }
       ]);
 
       getMealSuggestions(user.nutrition);
@@ -83,6 +81,7 @@ export default function CalendarPlan() {
       <div className="heading">
         <h1 className="text-5xl font-extrabold">Meal Suggestions:</h1>
       </div>
+
       <div className="content flex flex-col gap-5">
         <div className="nutrition flex flex-col gap-4">
           <h1 className="text-xl font-bold">Nutrition Left for the Day:</h1>
